@@ -90,9 +90,9 @@ class GoogleSheetsHandler:
             values = [
                 [
                     inn,
-                    data.get('name', ''),  # Короткое название
+                    data.get('name', ''),
                     data.get('current_founders', ''),
-                    data.get('former_founders', ''),  # Разница между старыми и новыми учредителями
+                    data.get('former_founders', ''),
                     data.get('change_date', '')
                 ]
             ]
@@ -106,6 +106,29 @@ class GoogleSheetsHandler:
         except HttpError as error:
             logger.error(f"Error updating company data for INN {inn}: {error}")
             return False
+
+    def clear_columns_cde(self):
+        """Очищает содержимое столбцов C, D и E начиная со второй строки."""
+        try:
+            # Определяем диапазон столбцов C, D и E начиная со второй строки
+            range_name = f'C2:E'
+            logger.info(f"Clearing content in range {range_name}")
+
+            # Создаем пустой диапазон данных для удаления
+            result = self.service.spreadsheets().values().get(spreadsheetId=self.sheet_id, range=range_name).execute()
+            num_rows = len(result.get('values', []))  # Считаем количество строк
+
+            # Создаем пустые значения для каждой строки в диапазоне C2:E
+            values = [['' for _ in range(3)] for _ in range(num_rows)]
+
+            body = {'values': values}
+            self.service.spreadsheets().values().update(
+                spreadsheetId=self.sheet_id, range=range_name,
+                valueInputOption='USER_ENTERED', body=body).execute()
+
+            logger.info(f"Successfully cleared content in columns C, D, E")
+        except HttpError as error:
+            logger.error(f"Error clearing columns C, D, and E: {error}")
 
 
 def test_google_sheets_handler():
